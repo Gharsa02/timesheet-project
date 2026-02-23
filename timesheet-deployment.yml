@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timesheet-dep
+  namespace: chap4
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: timesheet
+  template:
+    metadata:
+      labels:
+        app: timesheet
+    spec:
+      imagePullSecrets:
+      - name: regcred  # ← Secret pour accéder à DockerHub privé
+      containers:
+      - name: timesheet
+        image: gharsa02/timesheet:1.0   # ← Ton image DockerHub
+        ports:
+        - containerPort: 80
+        envFrom:
+        - configMapRef:
+            name: timesheet-config   # ← ConfigMap avec la config DB
+        - secretRef:
+            name: timesheet-secret   # ← Secret avec DB_USER et DB_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: timesheet-serv
+  namespace: chap4
+spec:
+  selector:
+    app: timesheet
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30380   # ← Minikube pourra exposer l'app sur http://<minikube-ip>:30380
